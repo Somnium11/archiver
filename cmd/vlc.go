@@ -7,8 +7,9 @@ var vlcCmd = &cobra.Command{
 		fmt.Println("vlc called")
 	},
 }
-const packedExtension = "vlc"
-var ErrEmptyPath = errors.New("path to file is not specified")
+
+	const packedExtension = "vlc"
+	var ErrEmptyPath = errors.New("path to file is not specified")
 func pack(_ *cobra.Command, args []string) {
 if len(args) == 0 || args[0] == "" {
 	handleErr(errors.New("no file specified"))
@@ -19,7 +20,9 @@ if len(args) == 0 || args[0] == "" {
 	if err != nil {
 		handleErr(err)
 	}
-	data, err := ioutil.ReadAll(r)
+	defer r.Close()
+	
+	data, err := io.ReadAll(r)
 	if err != nil {
 		handleErr(err)
 	}
@@ -27,7 +30,7 @@ if len(args) == 0 || args[0] == "" {
 packed := ""
 fmt.Println(string(data))
 
-err := ioutil.WriteFile(packedFileName, []byte(packed), 0644)
+err := os.WriteFile(packedFileName, []byte(packed), 0644)
 if err != nil {
 	handleErr(err)
 }
