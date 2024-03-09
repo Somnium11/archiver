@@ -1,13 +1,31 @@
 package vlc
 
 import (
-	"encoding"
+	"fmt"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
+const chunkSize = 8
+
+type BinaryChunks []BinaryChunk
+
+type BinaryChunk string
+
+type encodingTable map[rune]string
+	
+// Encode is a Go function that takes a string and returns a string.
+// It takes a string parameter and does not return anything.
 func Encode(str string) string {
-	return ""
+	str = prepareText(str)
+
+	bStr := encodeBin(str)
+
+	chunks := splitByChunks(bStr, chunkSize)
+
+	fmt.Println(chunks)
+
 }
 
 // prepareText prepares text for encoding
@@ -25,26 +43,53 @@ func prepareText(str string) string {
 	return buf.String()
 }
 
-func encodeBin(str string) string {
-	var buf strings.Builder
-	for _, ch := range str {
-		buf.WriteRune(bin(ch))
+// splitByChunks splits binary string by chunks with given size,
+// '100101101011100010100011' -> '10010110  10111000 10100011'
+func splitByChunks(bStr string, chunkSize int) BinaryChunks {
+	strLen := utf8.RuneCountInString(bStr)
+	chunksCount := utf8.RuneCountInString(bStr) / chunkSize
+
+	if strLen/chunkSize != 0 {
+		chunksCount += 1
 	}
-	return buf.String()
-}
+	result := make(BinaryChunks, 0, chunksCount)
+	var buf strings.Builder
+	for i, ch := range bStr {
+		buf.WriteString(string(ch))
 
-func bin(ch rune) string {
-	table := getEncodingTable(ch)
-
-	result, ok := table(ch)
-	if !ok {
-		panic("unknown char" + string(ch))
+		if (i+1) % chunkSize == 0 {
+			result = append(result, BinaryChunk(buf.String()))
+			buf.Reset()
+		}
+	}
+	if buf.Len() != 0 {
+		lastChunk := buf.String()
+		lastChunk += strings.Repeat("0", chunkSize-len(lastChunk))
+		result = append(result, BinaryChunk(lastChunk))
 	}
 	return result
 }
 
+// encodeBin encodes string to binary without spaces
+func encodeBin(str string) string {
+	var buf strings.Builder
+	for _, ch := range str {
+		buf.WriteString(bin(ch))
+	}
+	return buf.String()
+}
+
+	func bin(ch rune, table table.EncodingTable) string {
+		res, ok := table[ch]
+		if !ok {
+			panic("unknown character: " + string(ch))
+		}
+		return res
+	}
+	
+
 func getEncodingTable() encodingTable {
-	return getEncodedTable{
+	return encodingTable{
 		' ': "11",
 		't': "1001",
 		'n': "10000",
