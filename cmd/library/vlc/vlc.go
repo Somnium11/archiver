@@ -2,6 +2,7 @@ package vlc
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -13,19 +14,65 @@ type BinaryChunks []BinaryChunk
 
 type BinaryChunk string
 
+type HexChunk string
+
+type HexChunks []HexChunk
+
 type encodingTable map[rune]string
-	
+
 // Encode is a Go function that takes a string and returns a string.
 // It takes a string parameter and does not return anything.
 func Encode(str string) string {
 	str = prepareText(str)
 
-	bStr := encodeBin(str)
-
-	chunks := splitByChunks(bStr, chunkSize)
+	chunks := splitByChunks(encodeBin(str), chunkSize)
 
 	fmt.Println(chunks)
 
+	return chunks.ToHex().ToString()
+}
+
+func (hcs HexChunks) ToString() string {
+	const separatop = " "
+	switch len(hcs) {
+	case 0:
+		return ""
+	case 1:
+		return string(hcs[0])
+	}
+
+	var buf strings.Builder
+
+	buf.WriteString(string(hcs[0]))
+
+	for _, hc := range hcs[1:] {
+		buf.WriteString(separatop)
+		buf.WriteString(string(hc))
+	}
+	return buf.String()
+}
+
+// ToHex converts the BinaryChunks to HexChunks
+func (bcs BinaryChunks) ToHex() HexChunks {
+	result := make(HexChunks, 0, len(bcs))
+
+	for _, chunk := range bcs {
+		hexChunk := chunk.ToHex()
+		result = append(result, hexChunk()) //check
+	}
+	return result
+}
+
+func (bc BinaryChunk) ToHex() HexChunk {
+	num, err := strconv.ParseUint(string(bc), 2, chunkSize)
+	if err != nil {
+		panic("cant parse binary chunk:" + err.Error())
+	}
+	res := strings.ToUpper(fmt.Sprintf("%x", num))
+	if len(res) == 1 {
+		res = "0" + res
+	}
+	return HexChunk(res)
 }
 
 // prepareText prepares text for encoding
@@ -57,7 +104,7 @@ func splitByChunks(bStr string, chunkSize int) BinaryChunks {
 	for i, ch := range bStr {
 		buf.WriteString(string(ch))
 
-		if (i+1) % chunkSize == 0 {
+		if (i+1)%chunkSize == 0 {
 			result = append(result, BinaryChunk(buf.String()))
 			buf.Reset()
 		}
@@ -79,14 +126,14 @@ func encodeBin(str string) string {
 	return buf.String()
 }
 
-	func bin(ch rune, table table.EncodingTable) string {
-		res, ok := table[ch]
-		if !ok {
-			panic("unknown character: " + string(ch))
-		}
-		return res
+func bin(ch rune) string {
+	table := getEncodingTable()
+	res, ok := table[ch]
+	if !ok {
+		panic("unknown character: " + string(ch))
 	}
-	
+	return res
+}
 
 func getEncodingTable() encodingTable {
 	return encodingTable{
