@@ -102,7 +102,7 @@ func TestBinaryChunks_ToHex(t *testing.T) {
 		{
 			name: "base test",
 			bcs:  BinaryChunks{"00100000", "11101001", "00100100", "11000100"},
-			want: HexChunks{"62", "E9", "24", "62"},
+			want: HexChunks{"20", "E9", "24", "C4"},
 		},
 		// TODO: Add test cases.
 	}
@@ -119,13 +119,13 @@ func TestBinaryChunks_ToHex(t *testing.T) {
 func TestEncode(t *testing.T) {
 	tests := []struct {
 		name string
-		str string
+		str  string
 		want string
 	}{
 		{
-		name : "base test",
-		str : "Hello",
-		want : "20 E9 24 62",
+			name: "base test",
+			str:  "Hello",
+			want: "20 E9 24 C4",
 		},
 	}
 	for _, tt := range tests {
